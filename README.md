@@ -40,8 +40,8 @@ pip install -r requirements.txt
 ## Usage
 
 - Place the dataset file `creditcard.csv` in the `data/` directory.
-- Open the Jupyter notebook `credit_card_fraud_detection.ipynb` and follow the instructions to load, preprocess, model, and evaluate the data.
-- The trained model will be saved as `random_forest_model.pkl` in the `models/` directory.
+- Open the Jupyter notebook and run `credit_card_fraud_detection.ipynb` in notebooks folder and follow the instructions to load, preprocess, model, and evaluate the data.
+- The trained model will be saved as `best_random_forest_model.pkl` in the `models/` directory.
 - The evaluation results will be presented in the notebook and can also be found in the `report/` directory.
 
 ## Depoloyment
