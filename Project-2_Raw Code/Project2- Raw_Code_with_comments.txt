@@ -1,0 +1,268 @@
+import pandas as pd
+
+# Load data from CSV file
+data = pd.read_csv("C:\\Users\\Admin\\Desktop\\creditcard.csv")
+
+# Define the start time of the observation period
+start_time = pd.Timestamp("2013-09-01 00:00:00")
+
+# Convert elapsed seconds to timedelta objects
+data['Time'] = pd.to_timedelta(data['Time'], unit='s')
+
+# Add elapsed seconds to the start time to get the actual datetime values
+data['Time'] = start_time + data['Time']
+
+# Display the first few rows of the DataFrame
+print(data.head())
+
+
+# Display the last row of the DataFrame
+print(data.tail(1))
+
+
+# Step 1: Exploratory Data Analysis (EDA)
+
+# Summary statistics
+print("Summary statistics:")
+print(data.describe())
+
+# Distribution of features (optional)
+# You can plot histograms or density plots to visualize the distribution of features
+
+# Visualization of important features (optional)
+# Depending on the dataset and task, you can plot scatter plots, box plots, or other visualizations to explore relationships between features and the target variable
+
+
+# Visualize the distribution of features
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Visualizing distributions of all features
+plt.figure(figsize=(20, 15))
+for i, feature in enumerate(data.columns.drop(['Time', 'Class'])):
+    plt.subplot(6, 5, i+1)
+    sns.histplot(data[feature], bins=50, kde=True)
+    plt.title(feature)
+plt.tight_layout()
+plt.show()
+
+
+# Step 2: Data Cleaning
+
+# Handling Missing Values
+# Check for missing values in the dataset
+missing_values = data.isnull().sum()
+print("Missing values in the dataset:")
+print(missing_values)
+
+# If there are missing values, decide how to handle them
+# For example, you can drop rows with missing values or impute them with a mean or median
+
+# Drop rows with missing values
+data.dropna(inplace=True)  # This will remove rows with any missing values
+
+# Alternatively, you can impute missing values with a mean or median
+# Example:
+# data.fillna(data.mean(), inplace=True)  # Impute missing values with mean
+
+# Handling Outliers
+# Identify and deal with outliers in the dataset
+# You can use statistical methods or visualization techniques to detect outliers
+
+# Once outliers are identified, decide how to handle them (remove, cap, or transform features)
+
+
+# Step 2: Data Cleaning (Continued)
+
+# Handling Outliers
+# Identify and deal with outliers in the dataset
+# You can use statistical methods or visualization techniques to detect outliers
+# Once outliers are identified, decide how to handle them (remove, cap, or transform features)
+
+# Example: Detecting outliers using Z-score
+import numpy as np  # Import NumPy library
+
+from scipy import stats
+
+# Calculate Z-score for each numeric column
+z_scores = stats.zscore(data.drop(['Time', 'Class'], axis=1))
+
+# Define threshold for outlier detection (e.g., Z-score > 3 or < -3)
+threshold = 3
+
+# Find indices of outliers
+outlier_indices = np.where(np.abs(z_scores) > threshold)
+
+# Print indices of outliers
+print("Indices of outliers:")
+print(outlier_indices)
+
+
+# Visualize Outliers
+plt.figure(figsize=(12, 6))
+sns.scatterplot(data=data, x='Amount', y='V1', hue=outliers)
+plt.title('Outliers in the Data')
+plt.show()
+
+# Find outliers using z-scores
+outlier_indices = np.where(np.abs(z_scores) > threshold)
+
+# Filter the DataFrame to get outliers directly
+outliers = data.iloc[outlier_indices[0]]
+
+# Print summary statistics of outliers
+print("Summary statistics of outliers:")
+print(outliers.describe())
+
+
+
+from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import train_test_split
+import pandas as pd
+
+# Assuming 'data' contains your dataset with features and labels
+# Separate features and labels
+X = data.drop(['Class', 'Time'], axis=1)  # Drop 'Time' column and 'Class' column
+y = data['Class']
+
+# Split the data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Apply SMOTE
+smote = SMOTE(random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+
+# Check the class distribution after applying SMOTE
+print("Class distribution after SMOTE:")
+print(y_train_smote.value_counts())
+
+# Now you can train your model on the oversampled data
+
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Train the model
+model = LogisticRegression(max_iter=1000, random_state=42)
+model.fit(X_train_smote, y_train_smote)
+
+# Predict on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+
+ 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+# Train the Random Forest model
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train_smote, y_train_smote)
+
+# Predict on the test set
+y_pred_rf = rf_model.predict(X_test)
+
+# Evaluate the model
+print("Random Forest Classification Report:")
+print(classification_report(y_test, y_pred_rf))
+
+print("Random Forest Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred_rf))
+
+
+#### It seems we did achieved our desired result with this model quite efficiently but let us further redefine it using hyperparameters tuning too after trying out some models
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Get feature importances
+feature_importances = rf_model.feature_importances_
+indices = np.argsort(feature_importances)[::-1]
+columns = X_train.columns
+
+# Plot feature importances
+plt.figure(figsize=(15, 8))
+plt.title("Feature Importances")
+plt.bar(range(X_train.shape[1]), feature_importances[indices], align="center")
+plt.xticks(range(X_train.shape[1]), columns[indices], rotation=90)
+plt.xlim([-1, X_train.shape[1]])
+plt.show()
+
+
+from sklearn.model_selection import cross_val_score
+
+# Perform cross-validation
+cv_scores = cross_val_score(rf_model, X_train_smote, y_train_smote, cv=5, scoring='f1')
+print(f"Cross-validation F1 scores: {cv_scores}")
+print(f"Mean cross-validation F1 score: {np.mean(cv_scores)}")
+
+
+from sklearn.model_selection import GridSearchCV
+
+# Define the grid of hyperparameters
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [None, 10, 20],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
+
+# Create the grid search object
+grid_search = GridSearchCV(estimator=RandomForestClassifier(random_state=42),
+                           param_grid=param_grid,
+                           scoring='f1',
+                           cv=3,
+                           n_jobs=-1)
+
+# Perform grid search cross-validation
+grid_search.fit(X_train_smote, y_train_smote)
+
+# Print the best hyperparameters
+print("Best hyperparameters:", grid_search.best_params_)
+
+
+# Train the Random Forest model with the best hyperparameters
+best_rf_model = RandomForestClassifier(**grid_search.best_params_, random_state=42)
+best_rf_model.fit(X_train_smote, y_train_smote)
+
+# Predict and evaluate the model
+y_pred_best_rf = best_rf_model.predict(X_test)
+print("Random Forest Classification Report (Best Model):")
+print(classification_report(y_test, y_pred_best_rf))
+print("Random Forest Confusion Matrix (Best Model):")
+print(confusion_matrix(y_test, y_pred_best_rf))
+
+
+
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+
+
+
+# Train and evaluate Gradient Boosting
+gb_model = GradientBoostingClassifier(random_state=42)
+gb_model.fit(X_train_smote, y_train_smote)
+y_pred_gb = gb_model.predict(X_test)
+print("Gradient Boosting Classification Report:")
+print(classification_report(y_test, y_pred_gb))
+print("Gradient Boosting Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred_gb))
+
+
+
+
+# Cross-validation for Gradient Boosting
+cv_scores_gb = cross_val_score(gb_model, X_train_smote, y_train_smote, cv=5, scoring='f1')
+print(f"Gradient Boosting Cross-Validation F1 Scores: {cv_scores_gb}")
+print(f"Gradient Boosting Cross-Validation F1 Mean: {cv_scores_gb.mean()}")
+
+import joblib
+
+# Save the best model to a file
+joblib.dump(rf_model, 'random_forest_model.pkl')
+
