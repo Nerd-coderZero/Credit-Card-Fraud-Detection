@@ -24,7 +24,8 @@ st.markdown("""
 
 def load_model():
     try:
-        model = joblib.load('Models/random_forest_model.pkl')
+        model_path = "Models/best_random_forest_model.pkl"
+        model = joblib.load(model_path)
         return model
     except Exception as e:
         st.error(f"Error loading model: {e}")
