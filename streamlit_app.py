@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 # Load the trained model
-with open("models/best_random_forest_model.pkl", "rb") as file:
+with open("Models/best_random_forest_model.pkl", "rb") as file:
     model = pickle.load(file)
 
 st.title("Credit Card Fraud Detection")
